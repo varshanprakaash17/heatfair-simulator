@@ -42,3 +42,6 @@ Thumbs.db
 # Presentation exports
 presentation/*.pdf.export
 presentation/*.key
+
+# OpenNext build output
+.open-next/
