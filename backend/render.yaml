@@ -1,0 +1,24 @@
+# Render blueprint for the FastAPI service.
+# Repo root is the heatfair/ directory, so the service root is backend/.
+# Set DATABASE_URL to your Supabase connection string in the Render dashboard if you
+# want durable data; the default SQLite file is ephemeral and reseeds on restart.
+services:
+  - type: web
+    name: heatfair-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: ENVIRONMENT
+        value: production
+      # Allows the Freebuff Sites preview and production origins without a redeploy.
+      - key: CORS_ORIGIN_REGEX_PATTERN
+        value: "https://([a-z0-9-]+\\.)?freebuff\\.site"
+      - key: DATABASE_URL
+        sync: false
+      - key: AUTO_SEED_DEMO
+        value: "true"

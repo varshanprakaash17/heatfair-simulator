@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  * {
+    border-color: #e2e9f0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    @apply bg-mist-100 text-ink;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply text-ink;
+    letter-spacing: -0.02em;
+  }
+
+  ::selection {
+    background: rgba(20, 168, 143, 0.18);
+    color: #081b2e;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f5f8fb;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cdd9e5;
+    border-radius: 999px;
+    border: 2px solid #f5f8fb;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #aebfd0;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgba(20, 168, 143, 0.55);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line bg-white shadow-card;
+  }
+
+  .card-flat {
+    @apply rounded-2xl border border-line bg-mist-50;
+  }
+
+  .panel {
+    @apply rounded-2xl border border-line bg-white shadow-card;
+  }
+
+  .label-caps {
+    @apply text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-muted;
+  }
+
+  .metric {
+    @apply font-display tabular-nums tracking-tight text-ink;
+  }
+
+  .focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+  }
+
+  .hairline {
+    @apply border-t border-line;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .grid-lines {
+    background-image: theme("backgroundImage.grid");
+    background-size: 28px 28px;
+  }
+
+  .prose-heatfair p {
+    @apply text-[14px] leading-7 text-ink-soft;
+  }
+}
+
+.recharts-wrapper,
+.recharts-surface {
+  outline: none;
+}

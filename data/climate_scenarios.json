@@ -1,0 +1,266 @@
+{
+  "description": "Three illustrative climate scenarios derived from a documented diurnal profile.",
+  "scenarios": [
+    {
+      "name": "Normal working conditions",
+      "temperature": 27.0,
+      "humidity": 52.0,
+      "work_duration": 8.0,
+      "work_intensity": "moderate",
+      "shift_start_hour": 7,
+      "source": "synthetic",
+      "illustrative": true,
+      "hourly_preview": [
+        {
+          "index": 0,
+          "hour": 7,
+          "label": "07:00",
+          "temperature": 25.8,
+          "humidity": 54.0,
+          "heat_index": 25.85,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 1,
+          "hour": 8,
+          "label": "08:00",
+          "temperature": 27.2,
+          "humidity": 51.0,
+          "heat_index": 27.68,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 2,
+          "hour": 9,
+          "label": "09:00",
+          "temperature": 28.4,
+          "humidity": 48.0,
+          "heat_index": 28.71,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 3,
+          "hour": 10,
+          "label": "10:00",
+          "temperature": 29.4,
+          "humidity": 45.0,
+          "heat_index": 29.56,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 4,
+          "hour": 11,
+          "label": "11:00",
+          "temperature": 30.1,
+          "humidity": 42.5,
+          "heat_index": 30.11,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 5,
+          "hour": 12,
+          "label": "12:00",
+          "temperature": 30.6,
+          "humidity": 41.0,
+          "heat_index": 30.54,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 6,
+          "hour": 13,
+          "label": "13:00",
+          "temperature": 30.9,
+          "humidity": 40.0,
+          "heat_index": 30.78,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 7,
+          "hour": 14,
+          "label": "14:00",
+          "temperature": 31.0,
+          "humidity": 39.5,
+          "heat_index": 30.84,
+          "source": "synthetic_diurnal_profile"
+        }
+      ]
+    },
+    {
+      "name": "Hot working conditions",
+      "temperature": 34.0,
+      "humidity": 62.0,
+      "work_duration": 8.0,
+      "work_intensity": "heavy",
+      "shift_start_hour": 6,
+      "source": "synthetic",
+      "illustrative": true,
+      "hourly_preview": [
+        {
+          "index": 0,
+          "hour": 6,
+          "label": "06:00",
+          "temperature": 31.4,
+          "humidity": 67.0,
+          "heat_index": 37.74,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 1,
+          "hour": 7,
+          "label": "07:00",
+          "temperature": 32.8,
+          "humidity": 64.0,
+          "heat_index": 40.46,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 2,
+          "hour": 8,
+          "label": "08:00",
+          "temperature": 34.2,
+          "humidity": 61.0,
+          "heat_index": 43.17,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 3,
+          "hour": 9,
+          "label": "09:00",
+          "temperature": 35.4,
+          "humidity": 58.0,
+          "heat_index": 45.26,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 4,
+          "hour": 10,
+          "label": "10:00",
+          "temperature": 36.4,
+          "humidity": 55.0,
+          "heat_index": 46.67,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 5,
+          "hour": 11,
+          "label": "11:00",
+          "temperature": 37.1,
+          "humidity": 52.5,
+          "heat_index": 47.38,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 6,
+          "hour": 12,
+          "label": "12:00",
+          "temperature": 37.6,
+          "humidity": 51.0,
+          "heat_index": 48.0,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 7,
+          "hour": 13,
+          "label": "13:00",
+          "temperature": 37.9,
+          "humidity": 50.0,
+          "heat_index": 48.31,
+          "source": "synthetic_diurnal_profile"
+        }
+      ]
+    },
+    {
+      "name": "Extreme heat scenario",
+      "temperature": 40.0,
+      "humidity": 55.0,
+      "work_duration": 9.0,
+      "work_intensity": "very_heavy",
+      "shift_start_hour": 6,
+      "source": "synthetic",
+      "illustrative": true,
+      "hourly_preview": [
+        {
+          "index": 0,
+          "hour": 6,
+          "label": "06:00",
+          "temperature": 37.4,
+          "humidity": 60.0,
+          "heat_index": 52.82,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 1,
+          "hour": 7,
+          "label": "07:00",
+          "temperature": 38.8,
+          "humidity": 57.0,
+          "heat_index": 55.71,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 2,
+          "hour": 8,
+          "label": "08:00",
+          "temperature": 40.2,
+          "humidity": 54.0,
+          "heat_index": 58.47,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 3,
+          "hour": 9,
+          "label": "09:00",
+          "temperature": 41.4,
+          "humidity": 51.0,
+          "heat_index": 60.35,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 4,
+          "hour": 10,
+          "label": "10:00",
+          "temperature": 42.4,
+          "humidity": 48.0,
+          "heat_index": 61.33,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 5,
+          "hour": 11,
+          "label": "11:00",
+          "temperature": 43.1,
+          "humidity": 45.5,
+          "heat_index": 61.56,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 6,
+          "hour": 12,
+          "label": "12:00",
+          "temperature": 43.6,
+          "humidity": 44.0,
+          "heat_index": 61.91,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 7,
+          "hour": 13,
+          "label": "13:00",
+          "temperature": 43.9,
+          "humidity": 43.0,
+          "heat_index": 62.01,
+          "source": "synthetic_diurnal_profile"
+        },
+        {
+          "index": 8,
+          "hour": 14,
+          "label": "14:00",
+          "temperature": 44.0,
+          "humidity": 42.5,
+          "heat_index": 61.88,
+          "source": "synthetic_diurnal_profile"
+        }
+      ]
+    }
+  ]
+}
