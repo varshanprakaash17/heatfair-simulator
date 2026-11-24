@@ -138,7 +138,7 @@ applies Pareto dominance. Full detail: [`docs/architecture.md`](docs/architectur
 | Reports | ReportLab (server-side PDF) |
 | Database | PostgreSQL / Supabase in production; SQLite for local development and the demo |
 | Weather | Open-Meteo geocoding + forecast API (no key, 15-minute server cache) |
-| Deployment target | Frontend Vercel, backend Render, database Supabase (see [Deployment](#deployment)) |
+| Deployment target | Frontend Freebuff Sites, backend Render, database Supabase (optional; see [Deployment](#deployment)) |
 
 ## Mathematical methodology
 
@@ -370,25 +370,23 @@ populating `organization_members`. The hackathon demo itself has no sign-in.
 
 ## Deployment
 
-Target topology: **Vercel** (frontend) + **Render** (FastAPI) + **Supabase** (Postgres).
+Target topology: **Freebuff Sites** (frontend, Next.js on Workers) + **Render** (FastAPI) +
+**Supabase** (optional Postgres). Sites cannot host the Python API, so the two halves deploy
+separately.
 
-**Status: prepared, not executed.** No deployment was performed from this workspace because it
-requires the owner's Vercel/Render/Supabase accounts and credentials. The repository is ready:
+1. **Backend** — on Render, create a Blueprint from this repository. [`render.yaml`](render.yaml)
+   builds `backend/` (`pip install -r requirements.txt`, then
+   `uvicorn app.main:app --host 0.0.0.0 --port $PORT`) behind health check `/api/v1/health`.
+   `CORS_ORIGIN_REGEX_PATTERN` already allows any `*.freebuff.site` origin, so no dashboard edit
+   is needed when the frontend is published. The default SQLite file is ephemeral: demo data
+   reseeds on restart. Set `DATABASE_URL` to a Supabase connection string for durable data
+   (`database/schema.sql`, then `database/seed.sql`; `database/rls.sql` only once auth is wired).
+2. **Frontend** — build with `NEXT_PUBLIC_API_URL` set to the Render URL, then deploy `frontend/`
+   to Freebuff Sites.
+3. **Verify** — open `/dashboard`, run a simulation, optimise, download a report. On the Render
+   free tier the API sleeps when idle, so the first request after a pause takes ~30 s.
 
-1. **Database** — create a Supabase project, run `database/schema.sql`, then `database/seed.sql`.
-   Apply `database/rls.sql` only when Supabase Auth and organisation membership are wired.
-2. **Backend** — create a Render web service from `backend/` using `backend/render.yaml`
-   (or: build `pip install -r requirements.txt`, start
-   `uvicorn app.main:app --host 0.0.0.0 --port $PORT`). Set `DATABASE_URL`,
-   `CORS_ORIGINS=https://<your-vercel-domain>`, `AUTO_SEED_DEMO=true`. Health check:
-   `/api/v1/health`.
-3. **Frontend** — import `frontend/` into Vercel, set
-   `NEXT_PUBLIC_API_URL=https://<your-render-service>`, deploy. On the free tier, wake the
-   Render service before a demo (cold start ~30 s).
-4. **Verify** — open `/dashboard`, run a simulation, optimise, download a report.
-
-Deployment link: **not available** until step 2–3 are completed by the owner. Add it here once
-live.
+Deployment link: add it here once the API URL and published site URL are known.
 
 ## Performance
 
