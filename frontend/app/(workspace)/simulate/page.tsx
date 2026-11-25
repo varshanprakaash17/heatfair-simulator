@@ -28,7 +28,8 @@ import { LocationSearch } from "@/components/LocationSearch";
 import { Badge } from "@/components/ui/display";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/form";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, isSignInRequired } from "@/lib/api";
+import { SignInPrompt } from "@/components/SignInPrompt";
 import { useWorkspace } from "@/lib/workspace";
 import type { Policy, WeatherPayload } from "@/lib/types";
 import { cn, formatDate, formatNumber } from "@/lib/utils";
@@ -52,6 +53,7 @@ export default function SimulatePage() {
   const [weatherError, setWeatherError] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [runError, setRunError] = useState<string | null>(null);
+  const [needsSignIn, setNeedsSignIn] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [now, setNow] = useState(() => Date.now());
 
@@ -132,6 +134,7 @@ export default function SimulatePage() {
       return;
     }
     setRunError(null);
+    setNeedsSignIn(false);
     setPhase("weather");
     try {
       // This is a real request; the stage completes only when it returns.
@@ -160,6 +163,7 @@ export default function SimulatePage() {
       router.push(`/results/${response.simulation.id}?new=1`);
     } catch (err) {
       setPhase("error");
+      setNeedsSignIn(isSignInRequired(err));
       setRunError(
         err instanceof ApiError
           ? err.message
@@ -386,7 +390,7 @@ export default function SimulatePage() {
               </div>
             ) : null}
 
-            {runError ? (
+            {runError && !needsSignIn ? (
               <div className="mt-4 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-[11.5px] leading-5 text-rose-800">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>{runError}</span>
@@ -629,9 +633,15 @@ export default function SimulatePage() {
             ) : null}
 
             {phase === "error" ? (
-              <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-[11.5px] leading-5 text-rose-800">
-                {runError}
-              </div>
+              needsSignIn ? (
+                <div className="mt-4">
+                  <SignInPrompt message="You're signed out, so no simulation was run." />
+                </div>
+              ) : (
+                <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-[11.5px] leading-5 text-rose-800">
+                  {runError}
+                </div>
+              )
             ) : null}
 
             {phase === "error" ? (

@@ -21,7 +21,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/display";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Label, SliderField, Switch } from "@/components/ui/form";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, isSignInRequired } from "@/lib/api";
+import { SignInPrompt } from "@/components/SignInPrompt";
 import { useWorkspace } from "@/lib/workspace";
 import type { Policy } from "@/lib/types";
 import { formatDate, formatNumber } from "@/lib/utils";
@@ -94,6 +95,7 @@ export default function PoliciesPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [needsSignIn, setNeedsSignIn] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const initialised = useRef(false);
 
@@ -135,6 +137,7 @@ export default function PoliciesPage() {
   async function save() {
     if (!bootstrap) return;
     if (issue) {
+      setNeedsSignIn(false);
       setError(issue);
       return;
     }
@@ -158,6 +161,7 @@ export default function PoliciesPage() {
       }
       await refresh();
     } catch (err) {
+      setNeedsSignIn(isSignInRequired(err));
       setError(err instanceof ApiError ? err.message : "The policy could not be saved.");
     } finally {
       setSaving(false);
@@ -167,6 +171,7 @@ export default function PoliciesPage() {
   async function duplicate() {
     if (!bootstrap) return;
     if (issue) {
+      setNeedsSignIn(false);
       setError(issue);
       return;
     }
@@ -183,6 +188,7 @@ export default function PoliciesPage() {
       setNotice("Policy duplicated as a new saved policy.");
       await refresh();
     } catch (err) {
+      setNeedsSignIn(isSignInRequired(err));
       setError(err instanceof ApiError ? err.message : "The policy could not be duplicated.");
     } finally {
       setSaving(false);
@@ -207,6 +213,7 @@ export default function PoliciesPage() {
       setNotice("Policy deleted. Historical simulations keep their original configuration.");
       await refresh();
     } catch (err) {
+      setNeedsSignIn(isSignInRequired(err));
       setError(
         err instanceof ApiError
           ? err.message
@@ -230,7 +237,9 @@ export default function PoliciesPage() {
         }
       />
 
-      {error ? (
+      {needsSignIn ? (
+        <SignInPrompt message="You're signed out, so no policy changes were saved." />
+      ) : error ? (
         <div className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-[12px] text-rose-800">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <p>{error}</p>

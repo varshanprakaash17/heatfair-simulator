@@ -47,6 +47,11 @@ export class ApiError extends Error {
   }
 }
 
+/** True when a request failed because the caller has no usable session. */
+export function isSignInRequired(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 401;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {};
 
