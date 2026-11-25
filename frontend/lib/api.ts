@@ -69,11 +69,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       headers,
     });
   } catch (error) {
-    throw new ApiError(
-      `Cannot reach the HeatFair API at ${API_URL}.`,
-      0,
-      error,
-    );
+    // Visitors only ever see a friendly message; the API address and local
+    // start-up command are developer details and stay in development builds.
+    const message =
+      process.env.NODE_ENV === "development"
+        ? `Cannot reach the HeatFair API at ${API_URL}. Start the backend with "uvicorn app.main:app --port 8000".`
+        : "The HeatFair service is temporarily unavailable. Please try again in a moment.";
+    throw new ApiError(message, 0, error);
   }
 
   if (!response.ok) {
