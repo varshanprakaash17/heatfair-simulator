@@ -15,9 +15,11 @@ services:
         value: "3.12.7"
       - key: ENVIRONMENT
         value: production
-      # Allows the Freebuff Sites preview and production origins without a redeploy.
+      # Only this project's own Freebuff Sites origins, not every tenant.
       - key: CORS_ORIGIN_REGEX_PATTERN
-        value: "https://([a-z0-9-]+\\.)?freebuff\\.site"
+        value: "https://heatfair-[a-z0-9-]+\\.freebuff\\.site"
+      - key: DOCS_ENABLED
+        value: "false"
       - key: DATABASE_URL
         sync: false
       - key: AUTO_SEED_DEMO

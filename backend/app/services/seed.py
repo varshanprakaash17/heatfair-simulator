@@ -120,7 +120,9 @@ def ensure_bootstrap_admin(db: Session, org: Organization) -> User | None:
     settings = get_settings()
     email = settings.bootstrap_admin_email.strip().lower()
     password = settings.bootstrap_admin_password
-    if not email or len(password) < 8:
+    # A public instance gets a longer minimum than a laptop demo account.
+    min_length = 8 if settings.environment == "development" else 12
+    if not email or len(password) < min_length:
         return None
 
     existing = db.execute(select(User).where(User.email == email)).scalar_one_or_none()

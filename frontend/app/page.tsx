@@ -220,9 +220,6 @@ export default function LandingPage() {
                     </div>
                   ))}
                 </div>
-                <p className="mt-2 text-[9.5px] text-ink-muted">
-                  Illustrative interface. Values are not a real workplace assessment.
-                </p>
               </div>
             </div>
           </div>
@@ -384,9 +381,6 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
-              <p className="mt-4 text-center text-[9.5px] text-ink-muted">
-                Illustrative output. HeatFair is decision support, not a safety certification.
-              </p>
             </div>
           </div>
         </div>

@@ -54,9 +54,9 @@ app = FastAPI(
     ),
     version="1.0.0",
     lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/openapi.json",
+    docs_url="/docs" if settings.docs_enabled else None,
+    redoc_url="/redoc" if settings.docs_enabled else None,
+    openapi_url="/openapi.json" if settings.docs_enabled else None,
 )
 
 app.add_middleware(
@@ -83,6 +83,7 @@ async def http_exception_handler(_request: Request, exc: StarletteHTTPException)
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail, "status": exc.status_code},
+        headers=getattr(exc, "headers", None),
     )
 
 

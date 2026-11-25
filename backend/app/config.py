@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     # Set in production to allow the deployed frontend origin without a redeploy.
     cors_origin_regex_pattern: str = ""
     auto_seed_demo: bool = True
+    # /docs, /redoc and /openapi.json. Turn off on a publicly reachable API.
+    docs_enabled: bool = True
     reports_dir: str = str(BASE_DIR / "reports")
     weather_cache_seconds: int = 900
     open_meteo_timeout_seconds: float = 8.0

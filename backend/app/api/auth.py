@@ -37,6 +37,15 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 SESSION_COOKIE = "heatfair_session"
 SESSION_TTL = timedelta(days=7)
 
+# A publicly reachable sign-in form needs a brake: five failures per client and
+# email inside the window, then 429 until the oldest failure ages out. This is
+# per-process state, which is enough for a single-instance deployment; a
+# multi-instance deployment would need a shared store instead.
+LOGIN_WINDOW = timedelta(minutes=5)
+LOGIN_MAX_FAILURES = 5
+LOGIN_MAX_TRACKED = 5_000
+_login_failures: dict[str, list[datetime]] = {}
+
 
 def _now() -> datetime:
     """Naive UTC now, matching how SQLite stores DateTime values."""
@@ -123,12 +132,52 @@ def _cookie_secure() -> bool:
     return get_settings().environment != "development"
 
 
+def _failure_key(request: Request, email: str) -> str:
+    client = request.client.host if request.client else "unknown"
+    return f"{client}|{email}"
+
+
+def _prune_failures(cutoff: datetime) -> None:
+    for stale in [k for k, v in _login_failures.items() if not v or v[-1] < cutoff]:
+        _login_failures.pop(stale, None)
+
+
+def _recent_failures(key: str) -> list[datetime]:
+    cutoff = _now() - LOGIN_WINDOW
+    recent = [stamp for stamp in _login_failures.get(key, []) if stamp > cutoff]
+    if recent:
+        _login_failures[key] = recent
+    else:
+        _login_failures.pop(key, None)
+    return recent
+
+
 @router.post("/login", response_model=AuthSessionOut)
-def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)):
+def login(
+    payload: LoginRequest,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+):
     """Sign in with the email and password an administrator issued."""
+    key = _failure_key(request, payload.email)
+    recent = _recent_failures(key)
+    if len(recent) >= LOGIN_MAX_FAILURES:
+        retry_after = max(int((recent[0] + LOGIN_WINDOW - _now()).total_seconds()) + 1, 1)
+        raise HTTPException(
+            status_code=429,
+            detail="Too many failed sign-in attempts. Try again in a few minutes.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
     user = db.execute(select(User).where(User.email == payload.email)).scalar_one_or_none()
     if user is None or not verify_password(payload.password, user.password_hash):
+        if len(_login_failures) >= LOGIN_MAX_TRACKED:
+            _prune_failures(_now() - LOGIN_WINDOW)
+        _login_failures.setdefault(key, []).append(_now())
         raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    _login_failures.pop(key, None)
 
     db.execute(delete(SessionRow).where(SessionRow.expires_at < _now()))
     token = secrets.token_urlsafe(32)

@@ -91,8 +91,7 @@ export default function SignInPage() {
           </form>
 
           <p className="mt-4 text-center text-[10.5px] leading-relaxed text-ink-muted">
-            HeatFair is for illustrative policy simulation only and is not an occupational-safety
-            certification.
+            Decision-support prototype — not a certified occupational-safety assessment.
           </p>
         </div>
 
