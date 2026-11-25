@@ -46,37 +46,26 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  let response: Response;
-  try {
-    const headers: Record<string, string> = {};
+  const headers: Record<string, string> = {};
 
-    if (init?.body != null) {
-      headers["Content-Type"] = "application/json";
-    }
-    if (init?.headers) {
-      for (const [key, value] of Object.entries(init.headers)) {
-        if (typeof value === "string") {
-          headers[key] = value;
-        }
+  if (init?.body != null) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (init?.headers) {
+    for (const [key, value] of Object.entries(init.headers)) {
+      if (typeof value === "string") {
+        headers[key] = value;
       }
     }
-
-    response = await fetch(`${API_URL}/api/v1${path}`, {
-      ...init,
-      cache: "no-store",
-      // The login session is an HTTP-only cookie set by the API origin.
-      credentials: "include",
-      headers,
-    });
-  } catch (error) {
-    // The API address and local start-up command are developer details that
-    // must never reach public visitors, even in a misconfigured build.
-    throw new ApiError(
-      "The HeatFair service is temporarily unavailable. Please try again in a moment.",
-      0,
-      error,
-    );
   }
+
+  const response = await fetch(`${API_URL}/api/v1${path}`, {
+    ...init,
+    cache: "no-store",
+    // The login session is an HTTP-only cookie set by the API origin.
+    credentials: "include",
+    headers,
+  });
 
   if (!response.ok) {
     let detail: unknown = null;
