@@ -122,25 +122,32 @@ def require_org_membership(
     organization_id: str,
     user: User | None,
     db: Session,
+    *,
+    allow_public_demo: bool = False,
 ) -> Organization:
-    """Return the organization when the signed-in user belongs to it.
+    """Enforce tenant membership; optionally permit read-only demo access.
 
-    Signed-out requests keep the demo path: the organization is returned
-    without a membership check so the seeded demo remains explorable.
+    Public demo access is intentionally opt-in at read endpoints only. All
+    mutations must use the default (authenticated membership required).
     """
     org = db.get(Organization, organization_id)
     if org is None:
         raise HTTPException(status_code=404, detail="Organization not found")
 
-    if user is not None:
-        membership = db.execute(
-            select(OrganizationMember).where(
-                OrganizationMember.user_id == user.id,
-                OrganizationMember.organization_id == organization_id,
-            )
-        ).scalar_one_or_none()
-        if membership is None:
-            raise HTTPException(status_code=403, detail="Not a member of this organization")
+    if user is None:
+        settings = get_settings()
+        if allow_public_demo and org.name == settings.demo_organization_name:
+            return org
+        raise HTTPException(status_code=401, detail="Sign in to access this organization")
+
+    membership = db.execute(
+        select(OrganizationMember).where(
+            OrganizationMember.user_id == user.id,
+            OrganizationMember.organization_id == organization_id,
+        )
+    ).scalar_one_or_none()
+    if membership is None:
+        raise HTTPException(status_code=403, detail="Not a member of this organization")
 
     return org
 
