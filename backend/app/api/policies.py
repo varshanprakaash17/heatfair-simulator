@@ -60,7 +60,8 @@ def update_policy(policy_id: str, payload: PolicyUpdate, db: Session = Depends(g
     policy = db.get(Policy, policy_id)
     if policy is None:
         raise HTTPException(status_code=404, detail="Policy not found")
-    require_org_membership(organization_id=policy.organization_id, user=user, db=db)\n    updates = payload.model_dump(exclude_unset=True)
+    require_org_membership(organization_id=policy.organization_id, user=user, db=db)
+    updates = payload.model_dump(exclude_unset=True)
     for key, value in updates.items():
         if value is not None:
             setattr(policy, key, value)
