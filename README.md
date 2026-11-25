@@ -390,7 +390,9 @@ separately.
 3. **Verify** — open `/dashboard`, run a simulation, optimise, download a report. On the Render
    free tier the API sleeps when idle, so the first request after a pause takes ~30 s.
 
-Deployment link: add it here once the API URL and published site URL are known.
+Published frontend: **[heatfair-qpyq0k-preview.freebuff.site](https://heatfair-qpyq0k-preview.freebuff.site)**.
+The FastAPI half is not deployed yet, so sign-in and simulations stay unavailable on that URL until
+`NEXT_PUBLIC_API_URL` points at a running backend (see step 1).
 
 ## Performance
 
