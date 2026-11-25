@@ -386,11 +386,11 @@ separately.
    from Google Cloud Console (OAuth client, type *Web application*) in the Render dashboard, and
    register `https://<your-service>.onrender.com/api/v1/auth/google/callback` as an authorised
    redirect URI. Set `FRONTEND_URL` to the published frontend origin. Then set
-   `BOOTSTRAP_ADMIN_EMAIL` (the Google address of the first owner) and
-   `BOOTSTRAP_ADMIN_PASSWORD` (only used to create the row) — on first boot that account is
-   created as owner of the demo organisation and can invite staff and worker accounts through
-   `POST /api/v1/auth/accounts`. Password sign-in is development-only; `PASSWORD_LOGIN_ENABLED`
-   re-enables it deliberately.
+   `BOOTSTRAP_ADMIN_EMAIL` (the Google address of the first owner) — on first boot that account
+   is created as owner of the demo organisation and can invite staff and worker accounts, by email
+   only, through `POST /api/v1/auth/accounts`. No password is needed anywhere, since sign-in is
+   Google; `BOOTSTRAP_ADMIN_PASSWORD` and `PASSWORD_LOGIN_ENABLED` exist only for local
+   development.
 2. **Frontend** — build with `NEXT_PUBLIC_API_URL` set to the Render URL, then deploy `frontend/`
    to Freebuff Sites. The value is inlined into the client bundle at build time, so the frontend
    must be rebuilt whenever the API URL changes.

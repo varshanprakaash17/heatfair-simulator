@@ -2,10 +2,10 @@
 
 People sign in with Google (``GET /auth/google/start``); only email addresses
 that already belong to an invited ``User`` are accepted, so there is still no
-public sign-up. Accounts are created by an organization owner or admin through
-``POST /auth/accounts``. Password sign-in remains as a local-development
-escape hatch (tests and the seeded demo), and is refused in production unless
-``PASSWORD_LOGIN_ENABLED`` is set. A signed-in session is an opaque token in an
+public sign-up. Accounts are invited by an organization owner or admin through
+``POST /auth/accounts`` with just an email address. Password sign-in remains as
+a local-development escape hatch (tests and the seeded demo), and is refused in
+production unless ``PASSWORD_LOGIN_ENABLED`` is set. A signed-in session is an opaque token in an
 HTTP-only cookie, stored in the ``sessions`` table.
 
 Organization access is scoped only by ``OrganizationMember`` rows — the same
@@ -38,7 +38,7 @@ from ..schemas.auth import (
     MembershipOut,
     UserOut,
 )
-from ..security import hash_password, verify_password
+from ..security import verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -322,11 +322,7 @@ def create_account(
     if existing is not None:
         raise HTTPException(status_code=409, detail="An account with this email already exists")
 
-    user = User(
-        email=payload.email,
-        name=payload.name,
-        password_hash=hash_password(payload.password),
-    )
+    user = User(email=payload.email, name=payload.name)
     db.add(user)
     db.flush()
     db.add(OrganizationMember(user_id=user.id, organization_id=org.id, role="member"))

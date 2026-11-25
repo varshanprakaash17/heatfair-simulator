@@ -1,4 +1,4 @@
-"""Pydantic schemas for invite-only email/password authentication."""
+"""Pydantic schemas for invite-only authentication."""
 
 from __future__ import annotations
 
@@ -49,12 +49,15 @@ class LoginRequest(BaseModel):
 
 
 class AccountCreateRequest(BaseModel):
-    """An owner/admin invites a staff or worker account into their organization."""
+    """An owner/admin invites a staff or worker account into their organization.
+
+    Sign-in is Google, so an invitation only needs the email address the person
+    will sign in with.
+    """
 
     organization_id: str = Field(..., min_length=1, max_length=36)
     email: str = Field(..., min_length=3, max_length=255)
     name: str | None = Field(None, max_length=200)
-    password: str = Field(..., min_length=8, max_length=256)
 
     @field_validator("email")
     @classmethod

@@ -110,26 +110,27 @@ DEMO_SCENARIOS = [
 
 
 def ensure_bootstrap_admin(db: Session, org: Organization) -> User | None:
-    """Create the first owner account when bootstrap credentials are configured.
+    """Create the first owner account when a bootstrap email is configured.
 
     A freshly hosted database has no accounts, so nobody can sign in through the
-    invite-only flow. When ``BOOTSTRAP_ADMIN_EMAIL`` and ``BOOTSTRAP_ADMIN_PASSWORD``
-    are set, that account is created once as an owner of the demo organisation and
-    can then invite staff and worker accounts. Unset variables leave the flow off.
+    invite-only flow. ``BOOTSTRAP_ADMIN_EMAIL`` alone is enough: the owner signs
+    in with Google, so the account is created once as an owner of the demo
+    organisation and can then invite staff and worker accounts. An unset email
+    leaves the flow off; ``BOOTSTRAP_ADMIN_PASSWORD`` is an optional local-dev
+    password for that same account.
     """
     settings = get_settings()
     email = settings.bootstrap_admin_email.strip().lower()
-    password = settings.bootstrap_admin_password
-    # A public instance gets a longer minimum than a laptop demo account.
-    min_length = 8 if settings.environment == "development" else 12
-    if not email or len(password) < min_length:
+    if not email:
         return None
 
     existing = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
     if existing is not None:
         return existing
 
-    user = User(email=email, name="Demo owner", password_hash=hash_password(password))
+    user = User(email=email, name="Demo owner")
+    if settings.bootstrap_admin_password:
+        user.password_hash = hash_password(settings.bootstrap_admin_password)
     db.add(user)
     db.flush()
     membership = db.execute(

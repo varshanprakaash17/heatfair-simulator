@@ -40,7 +40,8 @@ class Settings(BaseSettings):
     open_meteo_timeout_seconds: float = 8.0
     demo_organization_name: str = "Meridian Logistics (fictional)"
     # Optional first-owner account for hosted demos, whose database starts empty.
-    # Leave blank to disable; the account is only created when both are set.
+    # Leave the email blank to disable. Sign-in is Google, so no password is
+    # needed; the password is only kept for local password sign-in.
     bootstrap_admin_email: str = ""
     bootstrap_admin_password: str = ""
     # Where sign-in returns the browser after Google sends the code back.

@@ -107,7 +107,6 @@ export const api = {
     organization_id: string;
     email: string;
     name?: string;
-    password: string;
   }) =>
     request<AuthSession>("/auth/accounts", {
       method: "POST",

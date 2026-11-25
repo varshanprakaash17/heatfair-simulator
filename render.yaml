@@ -24,11 +24,13 @@ services:
         sync: false
       - key: AUTO_SEED_DEMO
         value: "true"
-      # First owner account for the hosted demo. Set both in the dashboard;
-      # without them the deployed database has no accounts and nobody can sign in.
-      # Sign-in happens with Google using this email address.
+      # First owner account for the hosted demo. Set the Google address in the
+      # dashboard; without it the deployed database has no accounts and nobody
+      # can sign in. No password is needed, because sign-in happens with Google.
       - key: BOOTSTRAP_ADMIN_EMAIL
         sync: false
+      # Optional local-development password for that account; Google sign-in
+      # never uses it.
       - key: BOOTSTRAP_ADMIN_PASSWORD
         sync: false
       # Google OAuth client from Google Cloud Console. The authorised redirect

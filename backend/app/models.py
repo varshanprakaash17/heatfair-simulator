@@ -25,6 +25,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
+from .security import unusable_password_hash
 
 
 def _uuid() -> str:
@@ -282,7 +283,7 @@ class User(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
     name: Mapped[str | None] = mapped_column(String(200), nullable=True)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False, default=unusable_password_hash)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, nullable=False)
 
     memberships: Mapped[list["OrganizationMember"]] = relationship(
