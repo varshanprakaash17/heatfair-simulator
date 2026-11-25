@@ -112,6 +112,15 @@ export const api = {
 
   me: () => request<AuthSession>("/auth/me"),
 
+  // Development only: the API reports whether it accepts email/password sign-in.
+  passwordLoginStatus: () => request<{ enabled: boolean }>("/auth/password-login"),
+
+  login: (email: string, password: string) =>
+    request<AuthSession>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
+
   createAccount: (payload: {
     organization_id: string;
     email: string;

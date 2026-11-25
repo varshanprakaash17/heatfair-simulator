@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Activity, ArrowLeft, ShieldCheck } from "lucide-react";
 import { API_URL } from "@/lib/utils";
+import { api, ApiError } from "@/lib/api";
 
 const ERROR_MESSAGES: Record<string, string> = {
   google_unconfigured:
@@ -41,12 +42,47 @@ function GoogleMark() {
 
 export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
+  const [passwordEnabled, setPasswordEnabled] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   // The API redirects back here with ?error=… when sign-in cannot finish.
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get("error");
     if (code) setError(ERROR_MESSAGES[code] ?? "Sign-in could not be completed. Please try again.");
   }, []);
+
+  // The API enables password sign-in in development only; hide the form elsewhere.
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .passwordLoginStatus()
+      .then((status) => {
+        if (!cancelled) setPasswordEnabled(status.enabled);
+      })
+      .catch(() => {
+        if (!cancelled) setPasswordEnabled(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function signInWithPassword(event: React.FormEvent) {
+    event.preventDefault();
+    if (submitting) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      await api.login(email.trim(), password);
+      // Full reload so the workspace picks up the new session cookie.
+      window.location.assign("/dashboard");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Sign-in could not be completed.");
+      setSubmitting(false);
+    }
+  }
 
   function signInWithGoogle() {
     setError(null);
@@ -97,6 +133,48 @@ export default function SignInPage() {
             <GoogleMark />
             Continue with Google
           </button>
+
+          {passwordEnabled ? (
+            <form onSubmit={signInWithPassword} className="mt-5 border-t border-line pt-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-muted">
+                Development sign-in
+              </p>
+              <p className="mt-1 text-[11.5px] leading-relaxed text-ink-soft">
+                This API accepts email and password because it runs in development mode.
+              </p>
+              <label className="mt-3 block text-[11px] font-medium text-navy-900">
+                Email
+                <input
+                  type="email"
+                  name="email"
+                  autoComplete="username"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-[12.5px] text-navy-950 outline-none focus:border-teal-600"
+                />
+              </label>
+              <label className="mt-3 block text-[11px] font-medium text-navy-900">
+                Password
+                <input
+                  type="password"
+                  name="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-[12.5px] text-navy-950 outline-none focus:border-teal-600"
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="mt-4 w-full rounded-lg bg-navy-900 px-4 py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-navy-800 disabled:opacity-60"
+              >
+                {submitting ? "Signing in…" : "Sign in"}
+              </button>
+            </form>
+          ) : null}
 
           <p className="mt-4 text-center text-[10.5px] leading-relaxed text-ink-muted">
             Decision-support prototype — not a certified occupational-safety assessment.

@@ -251,6 +251,12 @@ def _recent_failures(key: str) -> list[datetime]:
     return recent
 
 
+@router.get("/password-login")
+def password_login_status():
+    """Report whether email/password sign-in is accepted on this deployment."""
+    return {"enabled": password_login_available()}
+
+
 @router.post("/login", response_model=AuthSessionOut)
 def login(
     payload: LoginRequest,
