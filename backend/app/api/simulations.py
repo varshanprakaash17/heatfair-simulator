@@ -78,6 +78,8 @@ def list_simulations(
     db: Session = Depends(get_db),
     user: User | None = Depends(get_optional_user),
 ):
+    if not organization_id:
+        raise HTTPException(status_code=400, detail="organization_id is required")
     stmt = select(Simulation).order_by(Simulation.created_at.desc()).limit(limit)
     if organization_id:
         require_org_membership(organization_id=organization_id, user=user, db=db)
