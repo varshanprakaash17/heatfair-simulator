@@ -43,5 +43,11 @@ export function formatDate(value: string | null | undefined, withTime = true): s
   });
 }
 
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8000";
+// Empty by default: the browser calls `/api/v1/*` on this same origin, and the
+// route handler in app/api/v1/[...path]/route.ts forwards to the FastAPI
+// service (HEATFAIR_API_URL, server-side). That keeps session cookies
+// first-party and removes the build-time localhost dependency.
+// Set NEXT_PUBLIC_API_URL only to call a different API origin directly.
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+
+export const API_URL = configuredApiUrl || "";

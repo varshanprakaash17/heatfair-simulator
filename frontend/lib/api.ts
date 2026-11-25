@@ -34,6 +34,8 @@ export type AuthSession = {
   memberships: AuthMembership[];
 };
 
+const API_TIMEOUT_MS = 30_000;
+
 export class ApiError extends Error {
   status: number;
   detail: unknown;
@@ -59,13 +61,26 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
   }
 
-  const response = await fetch(`${API_URL}/api/v1${path}`, {
-    ...init,
-    cache: "no-store",
-    // The login session is an HTTP-only cookie set by the API origin.
-    credentials: "include",
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/api/v1${path}`, {
+      ...init,
+      cache: "no-store",
+      // The login session is an HTTP-only cookie set by the API origin.
+      credentials: "include",
+      headers,
+      signal: init?.signal ?? AbortSignal.timeout(API_TIMEOUT_MS),
+    });
+  } catch (cause) {
+    const timedOut = cause instanceof DOMException && cause.name === "TimeoutError";
+    throw new ApiError(
+      timedOut
+        ? "The HeatFair engine did not respond in time. Try again in a moment."
+        : "Could not reach the HeatFair API. The backend is not running, or this deployment is not configured with its address (HEATFAIR_API_URL).",
+      0,
+      cause,
+    );
+  }
 
   if (!response.ok) {
     let detail: unknown = null;

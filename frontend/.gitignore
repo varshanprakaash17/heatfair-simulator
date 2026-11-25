@@ -1,3 +1,6 @@
 /freebuff-sites-build/
 /.open-next/
 /.wrangler/
+
+# Local Worker secrets for `wrangler dev` / `opennextjs-cloudflare preview`.
+.dev.vars*

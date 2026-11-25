@@ -4,5 +4,11 @@
   "compatibility_date": "2025-09-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
-  "vars": { "NEXT_PUBLIC_API_URL": "http://localhost:8000" }
+  // Set HEATFAIR_API_URL to the deployed FastAPI origin (e.g.
+  // "https://heatfair-api.onrender.com") via the dashboard, `wrangler secret`,
+  // or a local .dev.vars file. It is read server-side by the /api/v1 proxy
+  // route, so it never reaches the browser bundle and does not require a
+  // rebuild. Leaving it unset surfaces an explicit "API unreachable" banner
+  // instead of silently calling localhost.
+  "vars": {}
 }

@@ -391,15 +391,21 @@ separately.
    only, through `POST /api/v1/auth/accounts`. No password is needed anywhere, since sign-in is
    Google; `BOOTSTRAP_ADMIN_PASSWORD` and `PASSWORD_LOGIN_ENABLED` exist only for local
    development.
-2. **Frontend** — build with `NEXT_PUBLIC_API_URL` set to the Render URL, then deploy `frontend/`
-   to Freebuff Sites. The value is inlined into the client bundle at build time, so the frontend
-   must be rebuilt whenever the API URL changes.
+2. **Frontend** — deploy `frontend/` to Freebuff Sites and set **`HEATFAIR_API_URL`** to the
+   service URL from step 1. The browser always calls the same-origin `/api/v1` proxy route
+   (`frontend/app/api/v1/[...path]/route.ts`), which forwards to that host server-side; the value is
+   read at runtime, so changing the API address does not need a rebuild, and session cookies stay
+   first-party. `NEXT_PUBLIC_API_URL` is still honoured, but only for calling a different API origin
+   directly from the browser. If neither is reachable, the workspace shows an explicit
+   “HeatFair API is not reachable” banner instead of empty cards.
 3. **Verify** — open `/dashboard`, run a simulation, optimise, download a report. On the Render
    free tier the API sleeps when idle, so the first request after a pause takes ~30 s.
 
 Published frontend: **[heatfair-qpyq0k-preview.freebuff.site](https://heatfair-qpyq0k-preview.freebuff.site)**.
 The FastAPI half is not deployed yet, so sign-in and simulations stay unavailable on that URL until
-`NEXT_PUBLIC_API_URL` points at a running backend (see step 1).
+the service exists and the frontend's `HEATFAIR_API_URL` points at it (see steps 1–2). Deploying the
+frontend alone can never make the data views work: every policy, worker, simulation and report is
+served by the API.
 
 ## Performance
 

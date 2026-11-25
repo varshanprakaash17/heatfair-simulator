@@ -43,7 +43,6 @@ export function LocationSearch({
     try {
       const data = await api.geocode(query.trim());
       setResults(data.results);
-      if (data.results.length === 0) setError("No matching places found. Try a nearby city or region.");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Location search failed.");
       setResults([]);
@@ -188,7 +187,11 @@ export function LocationSearch({
                   country: result.country,
                 });
                 setResults([]);
-                setQuery(result.label);
+                // A short name, not the full "City, State, Country" label: searching
+                // the whole label again returns no matches.
+                setQuery(result.label.split(",")[0].trim());
+                setSearched(false);
+                setError(null);
               }}
               className="flex w-full items-start gap-2.5 border-b border-line/70 px-3.5 py-2.5 text-left transition-colors last:border-0 hover:bg-mist-100"
             >
