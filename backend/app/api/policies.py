@@ -48,7 +48,7 @@ def list_policies(
 
 
 @router.get("/{policy_id}")
-def get_policy(policy_id: str, db: Session = Depends(get_db)):
+def get_policy(policy_id: str, db: Session = Depends(get_db), user: User | None = Depends(get_optional_user)):
     policy = db.get(Policy, policy_id)
     if policy is None:
         raise HTTPException(status_code=404, detail="Policy not found")
@@ -56,11 +56,11 @@ def get_policy(policy_id: str, db: Session = Depends(get_db)):
 
 
 @router.put("/{policy_id}")
-def update_policy(policy_id: str, payload: PolicyUpdate, db: Session = Depends(get_db)):
+def update_policy(policy_id: str, payload: PolicyUpdate, db: Session = Depends(get_db), user: User | None = Depends(get_optional_user)):
     policy = db.get(Policy, policy_id)
     if policy is None:
         raise HTTPException(status_code=404, detail="Policy not found")
-    updates = payload.model_dump(exclude_unset=True)
+    require_org_membership(organization_id=policy.organization_id, user=user, db=db)\n    updates = payload.model_dump(exclude_unset=True)
     for key, value in updates.items():
         if value is not None:
             setattr(policy, key, value)
@@ -74,7 +74,7 @@ def update_policy(policy_id: str, payload: PolicyUpdate, db: Session = Depends(g
 
 
 @router.delete("/{policy_id}", status_code=204)
-def delete_policy(policy_id: str, db: Session = Depends(get_db)):
+def delete_policy(policy_id: str, db: Session = Depends(get_db), user: User | None = Depends(get_optional_user)):
     """Delete a policy that is not referenced by any stored simulation."""
     from ..models import Simulation
 
