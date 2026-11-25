@@ -40,10 +40,10 @@ def list_policies(
     db: Session = Depends(get_db),
     user: User | None = Depends(get_optional_user),
 ):
-    stmt = select(Policy).order_by(Policy.created_at)
-    if organization_id:
-        require_org_membership(organization_id=organization_id, user=user, db=db, allow_public_demo=True)
-        stmt = stmt.where(Policy.organization_id == organization_id)
+    if not organization_id:
+        raise HTTPException(status_code=422, detail="organization_id is required")
+    require_org_membership(organization_id=organization_id, user=user, db=db, allow_public_demo=True)
+    stmt = select(Policy).where(Policy.organization_id == organization_id).order_by(Policy.created_at)
     return [policy_payload(p) for p in db.execute(stmt).scalars().all()]
 
 
@@ -52,6 +52,7 @@ def get_policy(policy_id: str, db: Session = Depends(get_db), user: User | None 
     policy = db.get(Policy, policy_id)
     if policy is None:
         raise HTTPException(status_code=404, detail="Policy not found")
+    require_org_membership(organization_id=policy.organization_id, user=user, db=db, allow_public_demo=True)
     return policy_payload(policy)
 
 
@@ -82,6 +83,7 @@ def delete_policy(policy_id: str, db: Session = Depends(get_db), user: User | No
     policy = db.get(Policy, policy_id)
     if policy is None:
         raise HTTPException(status_code=404, detail="Policy not found")
+    require_org_membership(organization_id=policy.organization_id, user=user, db=db)
     referenced = db.execute(
         select(Simulation.id).where(Simulation.policy_id == policy_id).limit(1)
     ).first()
