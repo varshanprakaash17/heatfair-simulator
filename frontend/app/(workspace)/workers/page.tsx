@@ -7,7 +7,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/display";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/form";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, isSignInRequired } from "@/lib/api";
+import { SignInPrompt } from "@/components/SignInPrompt";
 import { useWorkspace } from "@/lib/workspace";
 import type { WorkerListResponse } from "@/lib/types";
 import { formatDate, formatNumber } from "@/lib/utils";
@@ -59,6 +60,7 @@ export default function WorkersPage() {
   const [data, setData] = useState<WorkerListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [needsSignIn, setNeedsSignIn] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(DEFAULT_DRAFT);
   const [saving, setSaving] = useState(false);
@@ -70,7 +72,9 @@ export default function WorkersPage() {
     setError(null);
     try {
       setData(await api.workers(organizationId, { includeSynthetic: false }));
+      setNeedsSignIn(false);
     } catch (err) {
+      setNeedsSignIn(isSignInRequired(err));
       setError(err instanceof ApiError ? err.message : "Could not load worker profiles.");
     } finally {
       setLoading(false);
@@ -116,6 +120,7 @@ export default function WorkersPage() {
       setNotice(`${created.label ?? created.occupation} (${created.synthetic_id}) saved. The next simulation can include it.`);
       await load();
     } catch (err) {
+      setNeedsSignIn(isSignInRequired(err));
       setError(err instanceof ApiError ? err.message : "Could not save this worker profile.");
     } finally {
       setSaving(false);
@@ -135,6 +140,7 @@ export default function WorkersPage() {
       setNotice(`${name} deleted.`);
       await load();
     } catch (err) {
+      setNeedsSignIn(isSignInRequired(err));
       setError(err instanceof ApiError ? err.message : "Could not delete this worker profile.");
     } finally {
       setDeleting(null);
@@ -157,7 +163,9 @@ export default function WorkersPage() {
         }
       />
 
-      {error ? (
+      {needsSignIn ? (
+        <SignInPrompt message="Saved worker profiles belong to an organization, so you need a session to view or add them." />
+      ) : error ? (
         <div className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-[12px] text-rose-800">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <p>{error}</p>
@@ -259,10 +267,18 @@ export default function WorkersPage() {
                 Profiles appended to every new simulation for this organization.
               </p>
             </div>
-            <Badge tone="teal">{saved.length} saved</Badge>
+            <Badge tone="teal">{needsSignIn ? "— saved" : `${saved.length} saved`}</Badge>
           </div>
 
-          {loading && !data ? (
+          {needsSignIn ? (
+            <div className="px-5 py-10 text-center">
+              <Users className="mx-auto h-6 w-6 text-ink-muted" />
+              <p className="mt-2 text-[12px] font-medium text-navy-900">Sign in to load this roster</p>
+              <p className="mt-1 text-[11px] text-ink-muted">
+                These profiles are private to the organization, so the demo view cannot show them.
+              </p>
+            </div>
+          ) : loading && !data ? (
             <div className="flex items-center gap-2 px-5 py-10 text-[12px] text-ink-muted">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading saved worker profiles…
             </div>
