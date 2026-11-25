@@ -2,21 +2,23 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..api.auth import get_current_user, require_org_membership
 from ..config import get_settings
 from ..db import get_db
-from ..models import Report
+from ..models import Report, Simulation, User
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 
 @router.get("")
-def list_reports(simulation_id: str | None = None, db: Session = Depends(get_db)):
-    stmt = select(Report).order_by(Report.created_at.desc()).limit(50)
+def list_reports(organization_id: str = Query(...), simulation_id: str | None = None, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    require_org_membership(organization_id=organization_id, user=user, db=db)
+    stmt = select(Report).join(Simulation, Simulation.id == Report.simulation_id).where(Simulation.organization_id == organization_id).order_by(Report.created_at.desc()).limit(50)
     if simulation_id:
         stmt = stmt.where(Report.simulation_id == simulation_id)
     rows = db.execute(stmt).scalars().all()
@@ -33,8 +35,15 @@ def list_reports(simulation_id: str | None = None, db: Session = Depends(get_db)
 
 
 @router.get("/download/{filename}")
-def download(filename: str):
-    # Only allow files the generator itself created, resolved inside the reports dir.
+def download(filename: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    report = db.execute(select(Report).where(Report.report_url.like(f"%/{filename}")).limit(1)).scalar_one_or_none()
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+    simulation = db.get(Simulation, report.simulation_id)
+    if simulation is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+    require_org_membership(organization_id=simulation.organization_id, user=user, db=db)
+    # Keep the generated-file path constrained to the reports directory.
     settings = get_settings()
     base = Path(settings.reports_path).resolve()
     candidate = (base / filename).resolve()
