@@ -149,7 +149,7 @@ export function Sidebar() {
                 href="/auth/signin"
                 className="mt-1 inline-block text-[11.5px] font-medium text-teal-700 hover:text-teal-800"
               >
-                Sign in with your email
+                Sign in with Google
               </Link>
             )}
           </div>

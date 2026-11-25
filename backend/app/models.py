@@ -241,7 +241,7 @@ class Report(Base):
 
 
 class OrganizationMember(Base):
-    """Join table: authenticated Freebuff users belong to organizations."""
+    """Join table: authenticated users belong to organizations."""
 
     __tablename__ = "organization_members"
 

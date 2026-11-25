@@ -15,6 +15,8 @@ PROJECT_ROOT = BASE_DIR.parent                             # heatfair
 class Settings(BaseSettings):
     """Runtime settings.
 
+    Sign-in is Google OAuth in production and passwords only in development.
+
     ``DATABASE_URL`` accepts either a local SQLite file (the default, used for
     development and the demo) or a PostgreSQL/Supabase connection string. The
     same SQLAlchemy models and migrations apply to both.
@@ -41,6 +43,20 @@ class Settings(BaseSettings):
     # Leave blank to disable; the account is only created when both are set.
     bootstrap_admin_email: str = ""
     bootstrap_admin_password: str = ""
+    # Where sign-in returns the browser after Google sends the code back.
+    # The API also accepts an origin already allowed by the CORS settings, so a
+    # hosted preview keeps working when its deployment URL changes.
+    frontend_url: str = "http://localhost:3000"
+    # Google OAuth client (Google Cloud Console → APIs & Services → Credentials).
+    # Leave blank to disable Google sign-in; the sign-in page then explains that
+    # it is not configured yet.
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    # Optional absolute redirect URI registered with the Google client. When
+    # blank it is derived from the incoming request plus the API prefix.
+    google_redirect_uri: str = ""
+    # Local-development escape hatch only: production sign-in is Google-only.
+    password_login_enabled: bool = False
 
     @property
     def cors_origin_list(self) -> list[str]:

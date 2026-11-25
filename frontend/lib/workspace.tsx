@@ -23,7 +23,6 @@ type WorkspaceValue = {
   location: SelectedLocation | null;
   setLocation: (location: SelectedLocation | null) => void;
   user: AuthUser | null;
-  signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -116,15 +115,6 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     void refresh();
   }, [refresh]);
 
-  const signIn = useCallback(
-    async (email: string, password: string) => {
-      const session = await api.login(email, password);
-      setUser(session.user);
-      await refresh();
-    },
-    [refresh],
-  );
-
   const signOut = useCallback(async () => {
     await api.logout();
     setUser(null);
@@ -163,7 +153,6 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       location,
       setLocation,
       user,
-      signIn,
       signOut,
     }),
     [
@@ -176,7 +165,6 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       location,
       setLocation,
       user,
-      signIn,
       signOut,
     ],
   );

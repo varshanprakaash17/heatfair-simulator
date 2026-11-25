@@ -99,12 +99,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   health: () => request<{ status: string; database: string; version: string }>("/health"),
 
-  login: (email: string, password: string) =>
-    request<AuthSession>("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    }),
-
   logout: () => request<void>("/auth/logout", { method: "POST" }),
 
   me: () => request<AuthSession>("/auth/me"),

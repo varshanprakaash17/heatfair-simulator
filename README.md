@@ -381,9 +381,16 @@ separately.
    is needed when the frontend is published. The default SQLite file is ephemeral: demo data
    reseeds on restart. Set `DATABASE_URL` to a Supabase connection string for durable data
    (`database/schema.sql`, then `database/seed.sql`; `database/rls.sql` only once auth is wired).
-   Login is invite-only, so set `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` in the
-   Render dashboard: on first boot that account is created as owner of the demo organisation and
-   can then invite staff and worker accounts through `POST /api/v1/auth/accounts`.
+   Sign-in is **Google OAuth**, and it is invite-only: a Google account can sign in only when its
+   email already belongs to an invited user. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
+   from Google Cloud Console (OAuth client, type *Web application*) in the Render dashboard, and
+   register `https://<your-service>.onrender.com/api/v1/auth/google/callback` as an authorised
+   redirect URI. Set `FRONTEND_URL` to the published frontend origin. Then set
+   `BOOTSTRAP_ADMIN_EMAIL` (the Google address of the first owner) and
+   `BOOTSTRAP_ADMIN_PASSWORD` (only used to create the row) — on first boot that account is
+   created as owner of the demo organisation and can invite staff and worker accounts through
+   `POST /api/v1/auth/accounts`. Password sign-in is development-only; `PASSWORD_LOGIN_ENABLED`
+   re-enables it deliberately.
 2. **Frontend** — build with `NEXT_PUBLIC_API_URL` set to the Render URL, then deploy `frontend/`
    to Freebuff Sites. The value is inlined into the client bundle at build time, so the frontend
    must be rebuilt whenever the API URL changes.
