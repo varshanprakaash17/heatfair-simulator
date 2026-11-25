@@ -82,7 +82,7 @@ def list_simulations(
         raise HTTPException(status_code=400, detail="organization_id is required")
     stmt = select(Simulation).order_by(Simulation.created_at.desc()).limit(limit)
     if organization_id:
-        require_org_membership(organization_id=organization_id, user=user, db=db)
+        require_org_membership(organization_id=organization_id, user=user, db=db, allow_public_demo=True)
         stmt = stmt.where(Simulation.organization_id == organization_id)
     simulations = db.execute(stmt).scalars().all()
     payloads = []
