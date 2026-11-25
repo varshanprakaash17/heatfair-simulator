@@ -22,7 +22,7 @@ from .api import auth, dashboard, demo, health, organizations, policies, reports
 from .config import get_settings
 from .db import SessionLocal, init_db
 from .models import Organization
-from .services.seed import ensure_demo_data
+from .services.seed import ensure_bootstrap_admin, ensure_demo_data
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logger = logging.getLogger("heatfair")
@@ -35,9 +35,12 @@ async def lifespan(_app: FastAPI):
     init_db()
     if settings.auto_seed_demo:
         with SessionLocal() as db:
-            if db.execute(select(Organization)).first() is None:
-                ensure_demo_data(db)
+            org = db.execute(select(Organization)).scalars().first()
+            if org is None:
+                org = ensure_demo_data(db)
                 logger.info("Seeded demo organisation, policies, scenarios and 500 synthetic workers")
+            if ensure_bootstrap_admin(db, org) is not None:
+                logger.info("Bootstrap owner account ready: %s", settings.bootstrap_admin_email.strip().lower())
     logger.info("HeatFair API ready (env=%s, db=%s)", settings.environment, "sqlite" if settings.is_sqlite else "postgres")
     yield
 

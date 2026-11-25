@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     weather_cache_seconds: int = 900
     open_meteo_timeout_seconds: float = 8.0
     demo_organization_name: str = "Meridian Logistics (fictional)"
+    # Optional first-owner account for hosted demos, whose database starts empty.
+    # Leave blank to disable; the account is only created when both are set.
+    bootstrap_admin_email: str = ""
+    bootstrap_admin_password: str = ""
 
     @property
     def cors_origin_list(self) -> list[str]:

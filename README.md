@@ -381,8 +381,12 @@ separately.
    is needed when the frontend is published. The default SQLite file is ephemeral: demo data
    reseeds on restart. Set `DATABASE_URL` to a Supabase connection string for durable data
    (`database/schema.sql`, then `database/seed.sql`; `database/rls.sql` only once auth is wired).
+   Login is invite-only, so set `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` in the
+   Render dashboard: on first boot that account is created as owner of the demo organisation and
+   can then invite staff and worker accounts through `POST /api/v1/auth/accounts`.
 2. **Frontend** — build with `NEXT_PUBLIC_API_URL` set to the Render URL, then deploy `frontend/`
-   to Freebuff Sites.
+   to Freebuff Sites. The value is inlined into the client bundle at build time, so the frontend
+   must be rebuilt whenever the API URL changes.
 3. **Verify** — open `/dashboard`, run a simulation, optimise, download a report. On the Render
    free tier the API sleeps when idle, so the first request after a pause takes ~30 s.
 

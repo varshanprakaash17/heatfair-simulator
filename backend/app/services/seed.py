@@ -11,7 +11,17 @@ import time
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..models import Organization, Policy, Scenario, Simulation, SimulationResult, WorkerProfile
+from ..models import (
+    Organization,
+    OrganizationMember,
+    Policy,
+    Scenario,
+    Simulation,
+    SimulationResult,
+    User,
+    WorkerProfile,
+)
+from ..security import hash_password
 from ..config import get_settings
 from ..engine.constants import MODEL_VERSION
 from ..engine.incentive import PolicySpec
@@ -97,6 +107,39 @@ DEMO_SCENARIOS = [
         "location": {"name": "Riverton (fictional)", "latitude": 12.97, "longitude": 77.59},
     },
 ]
+
+
+def ensure_bootstrap_admin(db: Session, org: Organization) -> User | None:
+    """Create the first owner account when bootstrap credentials are configured.
+
+    A freshly hosted database has no accounts, so nobody can sign in through the
+    invite-only flow. When ``BOOTSTRAP_ADMIN_EMAIL`` and ``BOOTSTRAP_ADMIN_PASSWORD``
+    are set, that account is created once as an owner of the demo organisation and
+    can then invite staff and worker accounts. Unset variables leave the flow off.
+    """
+    settings = get_settings()
+    email = settings.bootstrap_admin_email.strip().lower()
+    password = settings.bootstrap_admin_password
+    if not email or len(password) < 8:
+        return None
+
+    existing = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
+    if existing is not None:
+        return existing
+
+    user = User(email=email, name="Demo owner", password_hash=hash_password(password))
+    db.add(user)
+    db.flush()
+    membership = db.execute(
+        select(OrganizationMember).where(
+            OrganizationMember.user_id == user.id,
+            OrganizationMember.organization_id == org.id,
+        )
+    ).scalar_one_or_none()
+    if membership is None:
+        db.add(OrganizationMember(user_id=user.id, organization_id=org.id, role="owner"))
+    db.commit()
+    return user
 
 
 def ensure_demo_data(db: Session, worker_batch: int = 500) -> Organization:
