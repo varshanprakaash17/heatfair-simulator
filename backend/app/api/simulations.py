@@ -112,7 +112,7 @@ def get_simulation(simulation_id: str, db: Session = Depends(get_db), user: User
     simulation = db.get(Simulation, simulation_id)
     if simulation is None:
         raise HTTPException(status_code=404, detail="Simulation not found")
-    require_org_membership(organization_id=simulation.organization_id, user=user, db=db)
+    require_org_membership(organization_id=simulation.organization_id, user=user, db=db, allow_public_demo=True)
     optimization = svc.stored_optimization(db, simulation)
     return {
         **serializers.simulation_payload(simulation),
@@ -134,7 +134,7 @@ def get_results(simulation_id: str, db: Session = Depends(get_db), user: User | 
     simulation = db.get(Simulation, simulation_id)
     if simulation is None:
         raise HTTPException(status_code=404, detail="Simulation not found")
-    require_org_membership(organization_id=simulation.organization_id, user=user, db=db)
+    require_org_membership(organization_id=simulation.organization_id, user=user, db=db, allow_public_demo=True)
     if simulation.status == "failed":
         raise HTTPException(
             status_code=409, detail=simulation.error or "Simulation failed before producing results"
@@ -229,7 +229,7 @@ def get_pareto(simulation_id: str, db: Session = Depends(get_db), user: User | N
     simulation = db.get(Simulation, simulation_id)
     if simulation is None:
         raise HTTPException(status_code=404, detail="Simulation not found")
-    require_org_membership(organization_id=simulation.organization_id, user=user, db=db)
+    require_org_membership(organization_id=simulation.organization_id, user=user, db=db, allow_public_demo=True)
     stored = svc.stored_optimization(db, simulation)
     if stored is None:
         raise HTTPException(
@@ -301,7 +301,7 @@ def download_report(simulation_id: str, db: Session = Depends(get_db), user: Use
     simulation = db.get(Simulation, simulation_id)
     if simulation is None:
         raise HTTPException(status_code=404, detail="Simulation not found")
-    require_org_membership(organization_id=simulation.organization_id, user=user, db=db)
+    require_org_membership(organization_id=simulation.organization_id, user=user, db=db, allow_public_demo=True)
     if simulation.status != "completed":
         raise HTTPException(status_code=409, detail="Only completed simulations can be reported")
 
