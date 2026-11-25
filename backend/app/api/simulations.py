@@ -9,8 +9,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..config import get_settings
+from ..api.auth import get_optional_user, require_org_membership
 from ..db import get_db
-from ..models import Organization, Policy, Report, Simulation
+from ..models import Organization, Policy, Report, Simulation, User
 from ..optimizer.search import candidate_to_policy_dict
 from ..schemas import ApplyCandidateRequest, OptimizeRequest, SimulationRunRequest
 from ..services import insights, reports, serializers, simulation_service as svc
@@ -20,16 +21,18 @@ router = APIRouter(prefix="/simulations", tags=["simulations"])
 
 
 @router.post("/run", status_code=201)
-def run_simulation_endpoint(payload: SimulationRunRequest, db: Session = Depends(get_db)):
+def run_simulation_endpoint(
+    payload: SimulationRunRequest,
+    db: Session = Depends(get_db),
+    user: User | None = Depends(get_optional_user),
+):
     """Run a simulation synchronously and persist the result.
 
     A 500-worker, 9-hour scenario completes in well under a second on a laptop,
     so no background queue is required; the response includes the measured
     duration for transparency.
     """
-    org = db.get(Organization, payload.organization_id)
-    if org is None:
-        raise HTTPException(status_code=404, detail="Organization not found")
+    require_org_membership(organization_id=payload.organization_id, user=user, db=db)
     try:
         if payload.scenario_id:
             executed = svc.run_for_ids(
@@ -73,9 +76,11 @@ def list_simulations(
     organization_id: str | None = Query(None),
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
+    user: User | None = Depends(get_optional_user),
 ):
     stmt = select(Simulation).order_by(Simulation.created_at.desc()).limit(limit)
     if organization_id:
+        require_org_membership(organization_id=organization_id, user=user, db=db)
         stmt = stmt.where(Simulation.organization_id == organization_id)
     simulations = db.execute(stmt).scalars().all()
     payloads = []

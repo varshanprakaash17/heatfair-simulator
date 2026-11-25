@@ -17,6 +17,47 @@ begin;
 create extension if not exists "pgcrypto";
 
 -- ---------------------------------------------------------------------------
+-- users (invite-only staff/worker accounts, identified by email)
+-- ---------------------------------------------------------------------------
+create table if not exists users (
+    id             uuid primary key default gen_random_uuid(),
+    email          varchar(255) not null unique,
+    name           varchar(200),
+    password_hash  varchar(255) not null,
+    created_at     timestamptz not null default now()
+);
+
+create index if not exists ix_users_email on users (email);
+
+-- ---------------------------------------------------------------------------
+-- sessions (opaque token stored in the HTTP-only session cookie)
+-- ---------------------------------------------------------------------------
+create table if not exists sessions (
+    token       varchar(64) primary key,
+    user_id     uuid not null references users (id) on delete cascade,
+    expires_at  timestamptz not null,
+    created_at  timestamptz not null default now()
+);
+
+create index if not exists ix_sessions_user on sessions (user_id);
+
+-- ---------------------------------------------------------------------------
+-- organization_members
+-- Many-to-many join: users belong to organizations with a role.
+-- ---------------------------------------------------------------------------
+create table if not exists organization_members (
+    user_id         uuid not null references users (id) on delete cascade,
+    organization_id uuid not null references organizations (id) on delete cascade,
+    role            varchar(24) not null default 'member'
+                    check (role in ('owner', 'admin', 'member', 'viewer')),
+    created_at      timestamptz not null default now(),
+    primary key (user_id, organization_id)
+);
+
+create index if not exists ix_org_members_org on organization_members (organization_id);
+create index if not exists ix_org_members_user on organization_members (user_id);
+
+-- ---------------------------------------------------------------------------
 -- organizations
 -- ---------------------------------------------------------------------------
 create table if not exists organizations (

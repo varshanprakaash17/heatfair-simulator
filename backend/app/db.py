@@ -49,6 +49,30 @@ def init_db() -> None:
         _migrate_sqlite()
 
 
+def _rebuild_stale_users_table(conn) -> None:
+    """Recreate an empty pre-password ``users`` table.
+
+    An earlier build keyed users by a NOT NULL OIDC ``sub`` column that SQLite
+    cannot alter in place. The invite-only login uses an email key instead, so
+    an empty legacy table is dropped and recreated with the current schema.
+    """
+    existing = {
+        row[1] for row in conn.exec_driver_sql("PRAGMA table_info(users)").fetchall()
+    }
+    if not existing or "password_hash" in existing:
+        return
+
+    from . import models  # noqa: F401  (registers mappers)
+
+    if conn.exec_driver_sql("SELECT COUNT(*) FROM users").scalar():
+        raise RuntimeError(
+            "The existing users table predates email/password login and holds "
+            "accounts keyed by OIDC subject. Delete heatfair.db to reseed."
+        )
+    conn.exec_driver_sql("DROP TABLE users")
+    models.User.__table__.create(bind=conn, checkfirst=True)
+
+
 def _migrate_sqlite() -> None:
     """Apply additive column migrations for local demo databases.
 
@@ -71,6 +95,7 @@ def _migrate_sqlite() -> None:
         },
     }
     with engine.begin() as conn:
+        _rebuild_stale_users_table(conn)
         for table, columns in additive.items():
             existing = {
                 row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table})").fetchall()

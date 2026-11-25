@@ -16,6 +16,24 @@ import type {
   WorkerProfile,
 } from "./types";
 
+export type AuthUser = {
+  id: string;
+  email: string;
+  name: string | null;
+  created_at: string;
+};
+
+export type AuthMembership = {
+  organization_id: string;
+  organization_name: string;
+  role: string;
+};
+
+export type AuthSession = {
+  user: AuthUser;
+  memberships: AuthMembership[];
+};
+
 export class ApiError extends Error {
   status: number;
   detail: unknown;
@@ -30,17 +48,29 @@ export class ApiError extends Error {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
+    const headers: Record<string, string> = {};
+
+    if (init?.body != null) {
+      headers["Content-Type"] = "application/json";
+    }
+    if (init?.headers) {
+      for (const [key, value] of Object.entries(init.headers)) {
+        if (typeof value === "string") {
+          headers[key] = value;
+        }
+      }
+    }
+
     response = await fetch(`${API_URL}/api/v1${path}`, {
       ...init,
       cache: "no-store",
-      headers: {
-        ...(init?.body ? { "Content-Type": "application/json" } : {}),
-        ...(init?.headers ?? {}),
-      },
+      // The login session is an HTTP-only cookie set by the API origin.
+      credentials: "include",
+      headers,
     });
   } catch (error) {
     throw new ApiError(
-      `Cannot reach the HeatFair API at ${API_URL}. Start the backend with "uvicorn app.main:app --port 8000".`,
+      `Cannot reach the HeatFair API at ${API_URL}.`,
       0,
       error,
     );
@@ -66,6 +96,27 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   health: () => request<{ status: string; database: string; version: string }>("/health"),
+
+  login: (email: string, password: string) =>
+    request<AuthSession>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
+
+  logout: () => request<void>("/auth/logout", { method: "POST" }),
+
+  me: () => request<AuthSession>("/auth/me"),
+
+  createAccount: (payload: {
+    organization_id: string;
+    email: string;
+    name?: string;
+    password: string;
+  }) =>
+    request<AuthSession>("/auth/accounts", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 
   bootstrap: () => request<Bootstrap>("/demo/bootstrap"),
 

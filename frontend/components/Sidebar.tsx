@@ -34,7 +34,7 @@ const ANALYSIS = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { bootstrap, location } = useWorkspace();
+  const { bootstrap, location, user, signOut } = useWorkspace();
   const [health, setHealth] = useState<"checking" | "ok" | "down">("checking");
   const [lastId, setLastId] = useState<string | null>(null);
 
@@ -127,6 +127,31 @@ export function Sidebar() {
             <p className="mt-1.5 truncate text-[11px] text-ink-muted">
               {bootstrap?.organization.name ?? "Loading organisation…"}
             </p>
+          </div>
+
+          <div className="rounded-xl border border-line bg-mist-50 p-3">
+            <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-muted">
+              <Users className="h-3 w-3" /> {user ? "Signed in" : "Account"}
+            </p>
+            {user ? (
+              <>
+                <p className="mt-1 truncate text-[12px] font-medium text-navy-900">{user.email}</p>
+                <button
+                  type="button"
+                  onClick={() => void signOut()}
+                  className="mt-1.5 text-[10.5px] font-medium text-teal-700 hover:text-teal-800"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/auth/signin"
+                className="mt-1 inline-block text-[11.5px] font-medium text-teal-700 hover:text-teal-800"
+              >
+                Sign in with your email
+              </Link>
+            )}
           </div>
 
           <div className="rounded-xl border border-line bg-mist-50 p-3">

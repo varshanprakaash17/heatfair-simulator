@@ -15,7 +15,10 @@ router = APIRouter(prefix="/scenarios", tags=["scenarios"])
 
 
 @router.post("", status_code=201)
-def create_scenario(payload: ScenarioCreate, db: Session = Depends(get_db)):
+def create_scenario(
+    payload: ScenarioCreate,
+    db: Session = Depends(get_db),
+):
     hourly = [h.model_dump() for h in payload.hourly_conditions] if payload.hourly_conditions else None
     scenario = Scenario(
         name=payload.name.strip(),
@@ -39,7 +42,9 @@ def create_scenario(payload: ScenarioCreate, db: Session = Depends(get_db)):
 
 
 @router.get("")
-def list_scenarios(db: Session = Depends(get_db)):
+def list_scenarios(
+    db: Session = Depends(get_db),
+):
     scenarios = db.execute(select(Scenario).order_by(Scenario.created_at)).scalars().all()
     return [scenario_payload(s) for s in scenarios]
 

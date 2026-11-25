@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from .api import dashboard, demo, health, organizations, policies, reports, scenarios, simulations, weather, workers
+from .api import auth, dashboard, demo, health, organizations, policies, reports, scenarios, simulations, weather, workers
 from .config import get_settings
 from .db import SessionLocal, init_db
 from .models import Organization
@@ -99,6 +99,7 @@ async def validation_exception_handler(_request: Request, exc: RequestValidation
 
 
 for module in (
+    auth,
     health,
     organizations,
     policies,

@@ -11,13 +11,13 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import (
-    JSON,
     Boolean,
     DateTime,
     Float,
     ForeignKey,
     Index,
     Integer,
+    JSON,
     String,
     Text,
     UniqueConstraint,
@@ -44,6 +44,9 @@ class Organization(Base):
 
     policies: Mapped[list["Policy"]] = relationship(back_populates="organization", cascade="all, delete-orphan")
     simulations: Mapped[list["Simulation"]] = relationship(
+        back_populates="organization", cascade="all, delete-orphan"
+    )
+    members: Mapped[list["OrganizationMember"]] = relationship(
         back_populates="organization", cascade="all, delete-orphan"
     )
 
@@ -122,13 +125,7 @@ class WorkerProfile(Base):
 
 
 class WeatherSnapshot(Base):
-    """Immutable record of the weather data a simulation was executed against.
-
-    ``retrieved_at`` is when HeatFair called the provider; ``source_timestamp``
-    is the provider's own model/forecast timestamp. They are deliberately
-    separate. ``weather_type`` records that these are modelled forecast
-    conditions, never direct on-site measurements.
-    """
+    """Immutable record of the weather data a simulation was executed against."""
 
     __tablename__ = "weather_snapshots"
 
@@ -241,3 +238,71 @@ class Report(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, nullable=False)
 
     simulation: Mapped[Simulation] = relationship(back_populates="reports")
+
+
+class OrganizationMember(Base):
+    """Join table: authenticated Freebuff users belong to organizations."""
+
+    __tablename__ = "organization_members"
+
+    user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        primary_key=True,
+    )
+    organization_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        primary_key=True,
+    )
+    role: Mapped[str] = mapped_column(String(24), nullable=False, default="member")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, nullable=False)
+
+    organization: Mapped[Organization] = relationship(back_populates="members")
+    user: Mapped["User"] = relationship(back_populates="memberships")
+
+    __table_args__ = (
+        Index("ix_org_members_org", "organization_id"),
+        Index("ix_org_members_user", "user_id"),
+    )
+
+
+class User(Base):
+    """Invite-only staff/worker account, identified by email.
+
+    Accounts are created by an organization owner or admin; there is no public
+    sign-up. Organization access is decided solely by ``OrganizationMember``
+    rows, so this table carries identity and credentials only.
+    """
+
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
+    name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, nullable=False)
+
+    memberships: Mapped[list["OrganizationMember"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    sessions: Mapped[list["Session"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+
+
+class Session(Base):
+    """Opaque login session referenced by the HTTP-only session cookie."""
+
+    __tablename__ = "sessions"
+
+    token: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, nullable=False)
+
+    user: Mapped["User"] = relationship(back_populates="sessions")

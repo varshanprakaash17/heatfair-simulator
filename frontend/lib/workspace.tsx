@@ -8,7 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { api, ApiError } from "./api";
+import { api, ApiError, type AuthUser } from "./api";
 import type { Bootstrap, Policy, Scenario, SelectedLocation } from "./types";
 
 type WorkspaceValue = {
@@ -22,6 +22,9 @@ type WorkspaceValue = {
   setScenarios: (scenarios: Scenario[]) => void;
   location: SelectedLocation | null;
   setLocation: (location: SelectedLocation | null) => void;
+  user: AuthUser | null;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
 };
 
 const WorkspaceContext = createContext<WorkspaceValue | null>(null);
@@ -29,8 +32,7 @@ const WorkspaceContext = createContext<WorkspaceValue | null>(null);
 const LAST_SIMULATION_KEY = "heatfair:last-simulation";
 const LOCATION_KEY = "heatfair:location";
 
-// Concurrent callers (layout mount, Strict Mode, several pages) share one
-// request; a later explicit refresh still reaches the API again.
+// Concurrent callers share one bootstrap request.
 let bootstrapInFlight: Promise<Bootstrap> | null = null;
 
 function loadBootstrap(): Promise<Bootstrap> {
@@ -51,34 +53,35 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [location, setLocationState] = useState<SelectedLocation | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
 
+  // Restore the signed-in account from the session cookie.
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(LOCATION_KEY);
-      if (stored) setLocationState(JSON.parse(stored) as SelectedLocation);
-    } catch {
-      // Ignore malformed local storage; the user can pick a location again.
-    }
+    let cancelled = false;
+    api
+      .me()
+      .then((session) => {
+        if (!cancelled) setUser(session.user);
+      })
+      .catch(() => {
+        if (!cancelled) setUser(null);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const setLocation = useCallback((next: SelectedLocation | null) => {
-    setLocationState(next);
-    if (next) window.localStorage.setItem(LOCATION_KEY, JSON.stringify(next));
-    else window.localStorage.removeItem(LOCATION_KEY);
-  }, []);
-
+  // Load the demo workspace (or refresh it on demand).
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await loadBootstrap();
+      if (!document) return;
       setBootstrap(data);
       setPolicies(data.policies);
       setScenarios(data.scenarios);
 
-      // A first visit has no stored workplace yet. Reuse the location of the
-      // latest stored simulation so Live weather opens on real data instead
-      // of an empty picker.
       const stored = window.localStorage.getItem(LOCATION_KEY);
       const weatherLocation = data.latest_simulation?.configuration?.weather?.location as
         | Partial<SelectedLocation>
@@ -113,6 +116,40 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     void refresh();
   }, [refresh]);
 
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      const session = await api.login(email, password);
+      setUser(session.user);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const signOut = useCallback(async () => {
+    await api.logout();
+    setUser(null);
+    await refresh();
+  }, [refresh]);
+
+  // Restore saved location on mount.
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(LOCATION_KEY);
+      if (stored) setLocationState(JSON.parse(stored) as SelectedLocation);
+    } catch {
+      // Ignore malformed local storage.
+    }
+  }, []);
+
+  const setLocation = useCallback(
+    (next: SelectedLocation | null) => {
+      setLocationState(next);
+      if (next) window.localStorage.setItem(LOCATION_KEY, JSON.stringify(next));
+      else window.localStorage.removeItem(LOCATION_KEY);
+    },
+    [],
+  );
+
   const value = useMemo<WorkspaceValue>(
     () => ({
       bootstrap,
@@ -125,8 +162,23 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       setScenarios,
       location,
       setLocation,
+      user,
+      signIn,
+      signOut,
     }),
-    [bootstrap, policies, scenarios, loading, error, refresh, location, setLocation],
+    [
+      bootstrap,
+      policies,
+      scenarios,
+      loading,
+      error,
+      refresh,
+      location,
+      setLocation,
+      user,
+      signIn,
+      signOut,
+    ],
   );
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;

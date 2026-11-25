@@ -45,3 +45,10 @@ presentation/*.key
 
 # OpenNext build output
 .open-next/
+
+# Local run logs and generated deploy scratch
+backend/*.log
+frontend/hwtest/
+frontend/*-manifest.json
+frontend/freebuff.open-next.config.ts
+frontend/freebuff.wrangler.jsonc

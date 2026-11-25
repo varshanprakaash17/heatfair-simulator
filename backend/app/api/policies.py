@@ -5,8 +5,9 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from ..api.auth import get_optional_user, require_org_membership
 from ..db import get_db
-from ..models import Organization, Policy
+from ..models import Policy, User
 from ..schemas import PolicyCreate, PolicyUpdate
 from ..services.serializers import policy_payload
 
@@ -14,10 +15,12 @@ router = APIRouter(prefix="/policies", tags=["policies"])
 
 
 @router.post("", status_code=201)
-def create_policy(payload: PolicyCreate, db: Session = Depends(get_db)):
-    org = db.get(Organization, payload.organization_id)
-    if org is None:
-        raise HTTPException(status_code=404, detail="Organization not found")
+def create_policy(
+    payload: PolicyCreate,
+    db: Session = Depends(get_db),
+    user: User | None = Depends(get_optional_user),
+):
+    require_org_membership(organization_id=payload.organization_id, user=user, db=db)
     policy = Policy(**payload.model_dump())
     db.add(policy)
     try:
@@ -35,9 +38,11 @@ def create_policy(payload: PolicyCreate, db: Session = Depends(get_db)):
 def list_policies(
     organization_id: str | None = Query(None),
     db: Session = Depends(get_db),
+    user: User | None = Depends(get_optional_user),
 ):
     stmt = select(Policy).order_by(Policy.created_at)
     if organization_id:
+        require_org_membership(organization_id=organization_id, user=user, db=db)
         stmt = stmt.where(Policy.organization_id == organization_id)
     return [policy_payload(p) for p in db.execute(stmt).scalars().all()]
 

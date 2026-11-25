@@ -4,9 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
+from ..api.auth import get_optional_user, require_org_membership
 from ..db import get_db
 from ..engine.workers import generate_workers
-from ..models import Organization, WorkerProfile
+from ..models import User, WorkerProfile
 from ..schemas import WorkerCreateRequest, WorkerGenerateRequest, WorkerProfileOut, WorkerUpdateRequest
 
 router = APIRouter(prefix="/workers", tags=["workers"])
@@ -16,17 +17,14 @@ def _worker_payload(worker: WorkerProfile) -> dict:
     return WorkerProfileOut.model_validate(worker).model_dump(mode="json")
 
 
-def _require_org(db: Session, organization_id: str) -> Organization:
-    org = db.get(Organization, organization_id)
-    if org is None:
-        raise HTTPException(status_code=404, detail="Organization not found")
-    return org
-
-
 @router.post("/generate")
-def generate_population(payload: WorkerGenerateRequest, db: Session = Depends(get_db)):
+def generate_population(
+    payload: WorkerGenerateRequest,
+    db: Session = Depends(get_db),
+    user: User | None = Depends(get_optional_user),
+):
     """Generate (and optionally persist) a synthetic worker population."""
-    org = _require_org(db, payload.organization_id)
+    org = require_org_membership(organization_id=payload.organization_id, user=user, db=db)
 
     try:
         population = generate_workers(size=payload.size, seed=payload.seed)
@@ -80,9 +78,10 @@ def list_workers(
     limit: int = Query(500, ge=1, le=500),
     include_synthetic: bool = Query(True, description="Include generated synthetic profiles"),
     db: Session = Depends(get_db),
+    user: User | None = Depends(get_optional_user),
 ):
     """List stored worker profiles, saved profiles first."""
-    _require_org(db, organization_id)
+    require_org_membership(organization_id=organization_id, user=user, db=db)
     stmt = select(WorkerProfile).where(WorkerProfile.organization_id == organization_id)
     if not include_synthetic:
         stmt = stmt.where(WorkerProfile.synthetic.is_(False))
@@ -114,9 +113,13 @@ def list_workers(
 
 
 @router.post("", status_code=201)
-def create_worker(payload: WorkerCreateRequest, db: Session = Depends(get_db)):
+def create_worker(
+    payload: WorkerCreateRequest,
+    db: Session = Depends(get_db),
+    user: User | None = Depends(get_optional_user),
+):
     """Add a worker profile that is included in the next simulation."""
-    org = _require_org(db, payload.organization_id)
+    org = require_org_membership(organization_id=payload.organization_id, user=user, db=db)
 
     existing = set(
         db.execute(
@@ -152,7 +155,9 @@ def update_worker(
     payload: WorkerUpdateRequest,
     organization_id: str = Query(...),
     db: Session = Depends(get_db),
+    user: User | None = Depends(get_optional_user),
 ):
+    require_org_membership(organization_id=organization_id, user=user, db=db)
     worker = db.get(WorkerProfile, worker_id)
     if worker is None or worker.organization_id != organization_id:
         raise HTTPException(status_code=404, detail="Worker profile not found")
@@ -176,7 +181,9 @@ def delete_worker(
     worker_id: str,
     organization_id: str = Query(...),
     db: Session = Depends(get_db),
+    user: User | None = Depends(get_optional_user),
 ):
+    require_org_membership(organization_id=organization_id, user=user, db=db)
     worker = db.get(WorkerProfile, worker_id)
     if worker is None or worker.organization_id != organization_id:
         raise HTTPException(status_code=404, detail="Worker profile not found")
