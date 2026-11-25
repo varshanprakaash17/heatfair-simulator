@@ -42,7 +42,7 @@ def list_policies(
 ):
     stmt = select(Policy).order_by(Policy.created_at)
     if organization_id:
-        require_org_membership(organization_id=organization_id, user=user, db=db)
+        require_org_membership(organization_id=organization_id, user=user, db=db, allow_public_demo=True)
         stmt = stmt.where(Policy.organization_id == organization_id)
     return [policy_payload(p) for p in db.execute(stmt).scalars().all()]
 
