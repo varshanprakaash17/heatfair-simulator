@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from ..api.auth import get_current_user, require_org_membership
 from ..db import get_db
-from ..models import Organization, Policy, Scenario, Simulation, SimulationResult, WorkerProfile
+from ..models import Organization, Policy, Scenario, Simulation, SimulationResult, User, WorkerProfile
 from ..services import serializers, simulation_service as svc
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -13,18 +14,12 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 @router.get("")
 def dashboard(
-    organization_id: str | None = Query(None),
+    organization_id: str = Query(...),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     """Aggregated dashboard payload built entirely from stored simulation data."""
-    if organization_id:
-        org = db.get(Organization, organization_id)
-        if org is None:
-            raise HTTPException(status_code=404, detail="Organization not found")
-    else:
-        org = db.execute(select(Organization).order_by(Organization.created_at)).scalars().first()
-        if org is None:
-            raise HTTPException(status_code=404, detail="No organizations exist yet")
+    org = require_org_membership(organization_id=organization_id, user=user, db=db)
 
     simulations = (
         db.execute(
