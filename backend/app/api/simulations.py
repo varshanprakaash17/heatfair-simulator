@@ -108,10 +108,11 @@ def list_simulations(
 
 
 @router.get("/{simulation_id}")
-def get_simulation(simulation_id: str, db: Session = Depends(get_db)):
+def get_simulation(simulation_id: str, db: Session = Depends(get_db), user: User | None = Depends(get_optional_user)):
     simulation = db.get(Simulation, simulation_id)
     if simulation is None:
         raise HTTPException(status_code=404, detail="Simulation not found")
+    require_org_membership(organization_id=simulation.organization_id, user=user, db=db)
     optimization = svc.stored_optimization(db, simulation)
     return {
         **serializers.simulation_payload(simulation),
@@ -129,10 +130,11 @@ def get_simulation(simulation_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/{simulation_id}/results")
-def get_results(simulation_id: str, db: Session = Depends(get_db)):
+def get_results(simulation_id: str, db: Session = Depends(get_db), user: User | None = Depends(get_optional_user)):
     simulation = db.get(Simulation, simulation_id)
     if simulation is None:
         raise HTTPException(status_code=404, detail="Simulation not found")
+    require_org_membership(organization_id=simulation.organization_id, user=user, db=db)
     if simulation.status == "failed":
         raise HTTPException(
             status_code=409, detail=simulation.error or "Simulation failed before producing results"
@@ -161,13 +163,14 @@ def get_results(simulation_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/{simulation_id}/weather")
-def get_weather_snapshot(simulation_id: str, db: Session = Depends(get_db)):
+def get_weather_snapshot(simulation_id: str, db: Session = Depends(get_db), user: User | None = Depends(get_optional_user)):
     """Return the stored weather snapshot used by a simulation."""
     from ..models import WeatherSnapshot
 
     simulation = db.get(Simulation, simulation_id)
     if simulation is None:
         raise HTTPException(status_code=404, detail="Simulation not found")
+    require_org_membership(organization_id=simulation.organization_id, user=user, db=db)
     if not simulation.weather_snapshot_id:
         raise HTTPException(
             status_code=404,
@@ -195,10 +198,11 @@ def get_weather_snapshot(simulation_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/{simulation_id}/optimize")
-def optimize_policies(simulation_id: str, payload: OptimizeRequest, db: Session = Depends(get_db)):
+def optimize_policies(simulation_id: str, payload: OptimizeRequest, db: Session = Depends(get_db), user: User | None = Depends(get_optional_user)):
     simulation = db.get(Simulation, simulation_id)
     if simulation is None:
         raise HTTPException(status_code=404, detail="Simulation not found")
+    require_org_membership(organization_id=simulation.organization_id, user=user, db=db)
     if simulation.status != "completed":
         raise HTTPException(status_code=409, detail="Optimisation requires a completed simulation")
     try:
@@ -221,10 +225,11 @@ def optimize_policies(simulation_id: str, payload: OptimizeRequest, db: Session 
 
 
 @router.get("/{simulation_id}/pareto")
-def get_pareto(simulation_id: str, db: Session = Depends(get_db)):
+def get_pareto(simulation_id: str, db: Session = Depends(get_db), user: User | None = Depends(get_optional_user)):
     simulation = db.get(Simulation, simulation_id)
     if simulation is None:
         raise HTTPException(status_code=404, detail="Simulation not found")
+    require_org_membership(organization_id=simulation.organization_id, user=user, db=db)
     stored = svc.stored_optimization(db, simulation)
     if stored is None:
         raise HTTPException(
@@ -235,11 +240,12 @@ def get_pareto(simulation_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/{simulation_id}/apply", status_code=201)
-def apply_candidate(simulation_id: str, payload: ApplyCandidateRequest, db: Session = Depends(get_db)):
+def apply_candidate(simulation_id: str, payload: ApplyCandidateRequest, db: Session = Depends(get_db), user: User | None = Depends(get_optional_user)):
     """Create a policy from a stored Pareto candidate and optionally re-run."""
     simulation = db.get(Simulation, simulation_id)
     if simulation is None:
         raise HTTPException(status_code=404, detail="Simulation not found")
+    require_org_membership(organization_id=simulation.organization_id, user=user, db=db)
     stored = svc.stored_optimization(db, simulation)
     if stored is None:
         raise HTTPException(status_code=404, detail="No optimisation available for this simulation")
@@ -290,11 +296,12 @@ def apply_candidate(simulation_id: str, payload: ApplyCandidateRequest, db: Sess
 
 
 @router.get("/{simulation_id}/report")
-def download_report(simulation_id: str, db: Session = Depends(get_db)):
+def download_report(simulation_id: str, db: Session = Depends(get_db), user: User | None = Depends(get_optional_user)):
     """Generate the PDF report on demand and record it in the reports table."""
     simulation = db.get(Simulation, simulation_id)
     if simulation is None:
         raise HTTPException(status_code=404, detail="Simulation not found")
+    require_org_membership(organization_id=simulation.organization_id, user=user, db=db)
     if simulation.status != "completed":
         raise HTTPException(status_code=409, detail="Only completed simulations can be reported")
 
